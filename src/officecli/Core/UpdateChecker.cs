@@ -1,5 +1,7 @@
 // Copyright 2026 OfficeCLI (https://OfficeCLI.AI)
 // SPDX-License-Identifier: Apache-2.0
+// Modified by MiteClaw (2026-10-21): the self-updater is compiled out when
+// MITECLAW_NO_SELF_UPDATE is defined. See CHANGES-MITECLAW.md.
 
 using System.Diagnostics;
 using System.Reflection;
@@ -45,6 +47,12 @@ internal static class UpdateChecker
     /// </summary>
     internal static void CheckInBackground()
     {
+#if MITECLAW_NO_SELF_UPDATE
+        // MiteClaw build: the binary is pinned and checksum-verified by the
+        // MiteClaw installer. No update check, no staged-update swap, no skill
+        // refresh into other agents' folders, no config.json write.
+        return;
+#else
         // Best-effort: SaveConfig falls back to $TMPDIR inside containers when
         // home is read-only, so a CreateDirectory failure here is not fatal.
         try { Directory.CreateDirectory(ConfigDir); } catch { /* continue */ }
@@ -94,6 +102,7 @@ internal static class UpdateChecker
             if (!SaveConfig(config)) return;
             SpawnRefreshProcess();
         }
+#endif
     }
 
     /// <summary>
@@ -102,6 +111,11 @@ internal static class UpdateChecker
     /// </summary>
     internal static void RunRefresh()
     {
+#if MITECLAW_NO_SELF_UPDATE
+        // MiteClaw build: `officecli __update-check__` contacts no server and
+        // downloads nothing.
+        return;
+#else
         try
         {
             var config = LoadConfig();
@@ -280,6 +294,7 @@ internal static class UpdateChecker
             }
             catch { }
         }
+#endif
     }
 
     /// <summary>

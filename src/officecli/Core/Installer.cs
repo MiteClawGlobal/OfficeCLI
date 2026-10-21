@@ -1,5 +1,7 @@
 // Copyright 2026 OfficeCLI (https://OfficeCLI.AI)
 // SPDX-License-Identifier: Apache-2.0
+// Modified by MiteClaw (2026-10-21): the bare-invocation self-install is
+// compiled out when MITECLAW_NO_SELF_UPDATE is defined. See CHANGES-MITECLAW.md.
 
 using System.Diagnostics;
 
@@ -252,6 +254,12 @@ internal static class Installer
     /// </summary>
     internal static void MaybeAutoInstall(string[] args)
     {
+#if MITECLAW_NO_SELF_UPDATE
+        // MiteClaw build: a bare `officecli` never copies itself elsewhere or
+        // installs skills/MCP entries for other tools. `officecli install`
+        // (explicit) still works.
+        return;
+#else
         try
         {
             // Opt-out
@@ -315,6 +323,7 @@ internal static class Installer
             InstallBinary(quiet: true);
         }
         catch { /* never block the user's command */ }
+#endif
     }
 
     private static string? ReadVersionFromBinary(string path)
